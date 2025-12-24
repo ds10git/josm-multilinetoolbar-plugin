@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+** This is a template build file for a JOSM  plugin.
+**
+** Maintaining versions
+** ====================
+** See README.template
+**
+** Usage
+** =====
+** Call "ant help" to get possible build targets.
+**
+-->
+<project name="MultiLineToolbar" default="dist" basedir=".">
+
+    <!-- enter the SVN commit message -->
+    <property name="commit.message" value="Commit message"/>
+    <!-- enter the *lowest* JOSM version this plugin is currently compatible with -->
+    <property name="plugin.main.version" value="18759"/>
+
+    <!-- Configure these properties (replace "..." accordingly).
+         See https://josm.openstreetmap.de/wiki/DevelopersGuide/DevelopingPlugins
+    -->
+    <property name="plugin.author" value="René Mach"/>
+    <property name="plugin.class" value="org.openstreetmap.josm.plugins.multilinetoolbar.MultiLineToolbarPlugin"/>
+    <property name="plugin.description" value="Buttons in toolbar are shown in multiple lines, dependend on the width of the toolbar."/>
+    <property name="plugin.canloadatruntime" value="true"/>
+    <property name="de.plugin.description" value="Toolbar-Buttons werden in mehreren Zeilen angeordnet, wenn keine ausreichende Breite zur Verfügung steht."/>
+    <property name="plugin.icon" value="images/preferences/main_toolbar.svg"/>
+    <!--<property name="plugin.link" value="..."/>-->
+    <!--<property name="plugin.early" value="..."/>-->
+    <!--<property name="plugin.requires" value="..."/>-->
+    <!--<property name="plugin.stage" value="..."/>-->
+
+    <!-- ** include targets that all plugins have in common ** -->
+    <import file="../build-common.xml"/>
+  
+</project>
