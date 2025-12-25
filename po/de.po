@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-12-25 00:10+0100\n"
+"POT-Creation-Date: 2025-12-25 17:28+0100\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -17,22 +17,26 @@ msgstr ""
 "Content-Type: text/plain; charset=CHARSET\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-#: ../src/org/openstreetmap/josm/plugins/multilinetoolbar/MultiLineToolbarPref.java:34
+#: ../src/org/openstreetmap/josm/plugins/multilinetoolbar/MultiLineToolbarPref.java:42
 msgid "MultiLineToolbar"
 msgstr ""
 
-#: ../src/org/openstreetmap/josm/plugins/multilinetoolbar/MultiLineToolbarPref.java:34
-msgid "Change settings for MultiLineToolbar plugin."
-msgstr "Einstellungen für MultiLineToolbar ändern."
-
 #: ../src/org/openstreetmap/josm/plugins/multilinetoolbar/MultiLineToolbarPref.java:42
+msgid "Change settings for MultiLineToolbar plugin."
+msgstr "Einstellungen fr MultiLineToolbar ändern."
+
+#: ../src/org/openstreetmap/josm/plugins/multilinetoolbar/MultiLineToolbarPref.java:50
 msgid "Multi line toolbar enabled"
 msgstr "Symbolleiste mit mehreren Zeilen aktiviert"
 
-#: ../src/org/openstreetmap/josm/plugins/multilinetoolbar/MultiLineToolbarPref.java:43
+#: ../src/org/openstreetmap/josm/plugins/multilinetoolbar/MultiLineToolbarPref.java:51
 msgid "Toolbar menu button indicator enabled"
 msgstr "Indikator für Menüs in Symbolleiste aktiviert"
 
-#: ../src/org/openstreetmap/josm/plugins/multilinetoolbar/MultiLineToolbarPref.java:45
+#: ../src/org/openstreetmap/josm/plugins/multilinetoolbar/MultiLineToolbarPref.java:53
 msgid "Indicator size:"
 msgstr "Größe des Indikators:"
+
+#: ../src/org/openstreetmap/josm/plugins/multilinetoolbar/MultiLineToolbarPref.java:54
+msgid "Change menu indicator colors in color setting"
+msgstr "Farben des Menüindikators in den Farbeinstellungen ändern"
