@@ -27,7 +27,7 @@
     <property name="plugin.canloadatruntime" value="true"/>
     <property name="de.plugin.description" value="Toolbar-Buttons werden in mehreren Zeilen angeordnet, wenn keine ausreichende Breite zur Verfügung steht."/>
     <property name="plugin.icon" value="images/preferences/main_toolbar.svg"/>
-    <!--<property name="plugin.link" value="..."/>-->
+    <property name="plugin.link" value="https://github.com/ds10git/josm-multilinetoolbar-plugin"/>
     <!--<property name="plugin.early" value="..."/>-->
     <!--<property name="plugin.requires" value="..."/>-->
     <!--<property name="plugin.stage" value="..."/>-->

@@ -10,6 +10,7 @@ import java.awt.Point;
 import java.util.Objects;
 
 import javax.swing.AbstractButton;
+import javax.swing.BorderFactory;
 import javax.swing.Icon;
 import javax.swing.ImageIcon;
 import javax.swing.JToolBar;
@@ -22,7 +23,15 @@ import org.openstreetmap.josm.plugins.PluginInformation;
 import org.openstreetmap.josm.spi.preferences.Config;
 import org.openstreetmap.josm.spi.preferences.PreferenceChangedListener;
 
-public class MultiLineToolbarPlugin extends Plugin {  
+public class MultiLineToolbarPlugin extends Plugin {
+  private static final int BORDER_COMPACT = 3;
+  private static final int BORDER_NORMAL = 5;
+  
+  private static int BORDER_HORIZONTAL = Config.getPref().getBoolean(MultiLineToolbarPref.KEY_BUTTONS_COMPACT, true) ? BORDER_COMPACT : BORDER_NORMAL;
+  
+  private static final NamedColorProperty COLOR_BORDER = new NamedColorProperty(MultiLineToolbarPref.KEY_COLOR_BORDER, new Color(0, 255, 255));
+  private static final NamedColorProperty COLOR_FILLING = new NamedColorProperty(MultiLineToolbarPref.KEY_COLOR_FILLING, new Color(0, 0, 255));
+
   private static MultiLineToolbarPlugin instance;
   private LayoutManager original;
   private MultilineToolbarLayout layout;
@@ -42,7 +51,7 @@ public class MultiLineToolbarPlugin extends Plugin {
       if(Boolean.parseBoolean(e.getNewValue().toString())) {
         layout = new MultilineToolbarLayout();
         MainApplication.getToolbar().control.setLayout(layout);
-        MainApplication.getToolbar().control.revalidate();
+        MainApplication.getToolbar().control.doLayout();
       }
       else {
         JToolBar bar = MainApplication.getToolbar().control;
@@ -75,6 +84,11 @@ public class MultiLineToolbarPlugin extends Plugin {
       MainApplication.getToolbar().control.invalidate();
     };
     
+    
+    Config.getPref().addKeyPreferenceChangeListener(MultiLineToolbarPref.KEY_BUTTONS_COMPACT, e -> {
+      BORDER_HORIZONTAL = Config.getPref().getBoolean(MultiLineToolbarPref.KEY_BUTTONS_COMPACT, true) ? BORDER_COMPACT : BORDER_NORMAL;
+      MainApplication.getToolbar().control.doLayout();
+    });
     Config.getPref().addKeyPreferenceChangeListener(MultiLineToolbarPref.KEY_COLOR_BORDER, l);
     Config.getPref().addKeyPreferenceChangeListener(MultiLineToolbarPref.KEY_COLOR_FILLING, l);
     Config.getPref().addKeyPreferenceChangeListener(MultiLineToolbarPref.KEY_MENU_INDICATOR_SIZE, l);
@@ -93,7 +107,7 @@ public class MultiLineToolbarPlugin extends Plugin {
   private static final class MultilineToolbarLayout implements LayoutManager {
     private int width = 0;
     private int height = 0;
-
+    
     @Override
     public void addLayoutComponent(String name, Component comp) {}
 
@@ -116,23 +130,30 @@ public class MultiLineToolbarPlugin extends Plugin {
 
     @Override
     public void layoutContainer(Container parent) {
-      int xPos = 0;
-      int yPos = 0;
+      int xPos = parent.getInsets().top;
+      int yPos = parent.getInsets().left;
       
       int lineWidth = parent.getWidth();
       int lineHeight = 0;
+      int buttonWidth = 0;
       
       for(int i = 0; i < parent.getComponentCount(); i++) {
+        if(parent.getComponent(i) instanceof AbstractButton) {
+          ((AbstractButton)parent.getComponent(i)).setBorder(BorderFactory.createEmptyBorder(2,BORDER_HORIZONTAL,2,BORDER_HORIZONTAL));
+        }
+        
         lineHeight = Math.max(lineHeight, parent.getComponent(i).getPreferredSize().height);
+        buttonWidth = Math.max(buttonWidth, parent.getComponent(i).getPreferredSize().width);
       }
       
       if(lineHeight != 0) {
         for(int i = 0; i < parent.getComponentCount(); i++) {
           int height = lineHeight;
-          int width = parent.getComponent(i).getPreferredSize().width;
+          int width = buttonWidth;
 
           if(parent.getComponent(i) instanceof JToolBar.Separator) {
             width = parent.getComponent(i).getMinimumSize().width;
+            height = lineHeight;
           }
           else if(parent.getComponent(i) instanceof AbstractButton && Objects.equals("org.openstreetmap.josm.gui.tagging.presets.TaggingPresetMenu", ((AbstractButton)parent.getComponent(i)).getAction().getClass().getCanonicalName()) && !(((AbstractButton)parent.getComponent(i)).getIcon() instanceof CompoundIcon)) {
             CompoundIcon icon = new CompoundIcon(((AbstractButton)parent.getComponent(i)).getIcon(), ((AbstractButton)parent.getComponent(i)).getDisabledIcon(), lineHeight);
@@ -153,27 +174,24 @@ public class MultiLineToolbarPlugin extends Plugin {
               add = parent.getComponent(i+1).getPreferredSize().width;
           }
   
-          if(lineWidth != 0 && xPos + add > lineWidth) {
-              xPos = 0;
-              yPos += lineHeight;
+          if(lineWidth != 0 && xPos + add + parent.getInsets().right > lineWidth) {
+              xPos = parent.getInsets().left;
+              yPos += lineHeight + parent.getInsets().bottom+parent.getInsets().top;
           }
         }
       }
       else {
         lineHeight = 30;
       }
-      
-      parent.setPreferredSize(new Dimension(xPos, yPos + lineHeight));
-      
+
       width = xPos;
-      height = yPos + lineHeight;
+      height = yPos + lineHeight + parent.getInsets().bottom;
+
+      parent.setPreferredSize(new Dimension(width, height));
     }
   }
   
   private static final class CompoundIcon extends ImageIcon {
-    private static final NamedColorProperty COLOR_BORDER = new NamedColorProperty(MultiLineToolbarPref.KEY_COLOR_BORDER, new Color(0, 255, 255));
-    private static final NamedColorProperty COLOR_FILLING = new NamedColorProperty(MultiLineToolbarPref.KEY_COLOR_FILLING, new Color(0, 0, 255));
-    
     private ImageIcon icon;
     private ImageIcon iconDisabled;
     private int lineHeight;
