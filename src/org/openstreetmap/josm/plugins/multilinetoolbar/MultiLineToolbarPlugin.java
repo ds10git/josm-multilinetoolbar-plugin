@@ -13,6 +13,7 @@ import javax.swing.AbstractButton;
 import javax.swing.BorderFactory;
 import javax.swing.Icon;
 import javax.swing.ImageIcon;
+import javax.swing.JSeparator;
 import javax.swing.JToolBar;
 
 import org.openstreetmap.josm.data.preferences.NamedColorProperty;
@@ -40,54 +41,69 @@ public class MultiLineToolbarPlugin extends Plugin {
     super(info);
     instance = this;
     
-    original = MainApplication.getToolbar().control.getLayout();
+    if(MainApplication.getToolbar() != null) {
+      original = MainApplication.getToolbar().control.getLayout();
+    }
     
-    if(Config.getPref().getBoolean(MultiLineToolbarPref.KEY_ENABLED, true)) {
+    if(Config.getPref().getBoolean(MultiLineToolbarPref.KEY_ENABLED, true) && MainApplication.getToolbar() != null) {
       layout = new MultilineToolbarLayout();
       MainApplication.getToolbar().control.setLayout(layout);
     }
     
     Config.getPref().addKeyPreferenceChangeListener(MultiLineToolbarPref.KEY_ENABLED, e -> {
-      if(Boolean.parseBoolean(e.getNewValue().toString())) {
-        layout = new MultilineToolbarLayout();
-        MainApplication.getToolbar().control.setLayout(layout);
-        MainApplication.getToolbar().control.doLayout();
-      }
-      else {
-        JToolBar bar = MainApplication.getToolbar().control;
-        int maxHeight = 0;
-        
-        for(int i = 0; i < bar.getComponentCount(); i++) {
-          maxHeight = Math.max(bar.getComponent(i).getHeight(), maxHeight);
-  
-          if(bar.getComponent(i) instanceof AbstractButton && ((AbstractButton)bar.getComponent(i)).getIcon() instanceof CompoundIcon) {
-            AbstractButton b = (AbstractButton)bar.getComponent(i);
-            
-            CompoundIcon icon = (CompoundIcon)b.getIcon();
-            b.setIcon(icon.icon);
-            b.setDisabledIcon(icon.iconDisabled);
+      if(MainApplication.getToolbar() != null) {
+        if(Boolean.parseBoolean(e.getNewValue().toString())) {
+          layout = new MultilineToolbarLayout();
+          MainApplication.getToolbar().control.setLayout(layout);
+          MainApplication.getToolbar().control.doLayout();
+        }
+        else {
+          JToolBar bar = MainApplication.getToolbar().control;
+          int maxHeight = 0;
+          
+          for(int i = bar.getComponentCount()-1; i >= 0 ; i--) {
+            maxHeight = Math.max(bar.getComponent(i).getHeight(), maxHeight);
+    
+            if(bar.getComponent(i) instanceof AbstractButton && ((AbstractButton)bar.getComponent(i)).getIcon() instanceof CompoundIcon) {
+              AbstractButton b = (AbstractButton)bar.getComponent(i);
+              
+              CompoundIcon icon = (CompoundIcon)b.getIcon();
+              b.setIcon(icon.icon);
+              b.setDisabledIcon(icon.iconDisabled);
+            }
+            else if(bar.getComponent(i) instanceof JSeparator && ((JSeparator)bar.getComponent(i)).getOrientation() == JSeparator.HORIZONTAL) {
+              bar.remove(i);
+            }
           }
+          
+          bar.setLayout(original);
+          
+          if(maxHeight != 0) {
+            bar.setPreferredSize(new Dimension(bar.getWidth(), maxHeight));
+          }
+          
+          bar.revalidate();
+          layout = null;
         }
-        
-        bar.setLayout(original);
-        
-        if(maxHeight != 0) {
-          bar.setPreferredSize(new Dimension(bar.getWidth(), maxHeight));
-        }
-        
-        bar.revalidate();
-        layout = null;
       }
     });
     
     PreferenceChangedListener l = e -> {
-      MainApplication.getToolbar().control.invalidate();
+      if(layout != null && MainApplication.getToolbar() != null) {
+        MainApplication.getToolbar().control.invalidate();
+      }
     };
     
-    
     Config.getPref().addKeyPreferenceChangeListener(MultiLineToolbarPref.KEY_BUTTONS_COMPACT, e -> {
-      BORDER_HORIZONTAL = Config.getPref().getBoolean(MultiLineToolbarPref.KEY_BUTTONS_COMPACT, true) ? BORDER_COMPACT : BORDER_NORMAL;
-      MainApplication.getToolbar().control.doLayout();
+      if(layout != null && MainApplication.getToolbar() != null) {
+        BORDER_HORIZONTAL = Config.getPref().getBoolean(MultiLineToolbarPref.KEY_BUTTONS_COMPACT, true) ? BORDER_COMPACT : BORDER_NORMAL;
+        MainApplication.getToolbar().control.doLayout();
+      }
+    });
+    Config.getPref().addKeyPreferenceChangeListener(MultiLineToolbarPref.KEY_LINE_SEPARATOR, e -> {
+      if(layout != null && MainApplication.getToolbar() != null) {
+        MainApplication.getToolbar().control.doLayout();
+      }
     });
     Config.getPref().addKeyPreferenceChangeListener(MultiLineToolbarPref.KEY_COLOR_BORDER, l);
     Config.getPref().addKeyPreferenceChangeListener(MultiLineToolbarPref.KEY_COLOR_FILLING, l);
@@ -137,11 +153,14 @@ public class MultiLineToolbarPlugin extends Plugin {
       int lineHeight = 0;
       int buttonWidth = 0;
       
-      for(int i = 0; i < parent.getComponentCount(); i++) {
+      for(int i = parent.getComponentCount()-1; i >= 0; i--) {
         if(parent.getComponent(i) instanceof AbstractButton) {
           ((AbstractButton)parent.getComponent(i)).setBorder(BorderFactory.createEmptyBorder(2,BORDER_HORIZONTAL,2,BORDER_HORIZONTAL));
         }
-        
+        else if(parent.getComponent(i) instanceof JSeparator && ((JSeparator)parent.getComponent(i)).getOrientation() == JSeparator.HORIZONTAL) {
+          parent.remove(i);
+          continue;
+        }
         lineHeight = Math.max(lineHeight, parent.getComponent(i).getPreferredSize().height);
         buttonWidth = Math.max(buttonWidth, parent.getComponent(i).getPreferredSize().width);
       }
@@ -175,8 +194,20 @@ public class MultiLineToolbarPlugin extends Plugin {
           }
   
           if(lineWidth != 0 && xPos + add + parent.getInsets().right > lineWidth) {
-              xPos = parent.getInsets().left;
-              yPos += lineHeight + parent.getInsets().bottom+parent.getInsets().top;
+            xPos = parent.getInsets().left;
+            yPos += lineHeight + parent.getInsets().bottom;
+            
+            if(Config.getPref().getBoolean(MultiLineToolbarPref.KEY_LINE_SEPARATOR, true)) {
+              JSeparator sep = new JSeparator(JSeparator.HORIZONTAL);
+              sep.setSize(lineWidth-xPos-parent.getInsets().right, sep.getPreferredSize().height);
+              sep.setLocation(new Point(xPos,yPos));
+              
+              parent.add(sep,++i);            
+              
+              yPos += sep.getPreferredSize().height;
+            }
+            
+            yPos+=parent.getInsets().top;
           }
         }
       }
