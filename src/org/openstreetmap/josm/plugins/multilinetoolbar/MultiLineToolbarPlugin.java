@@ -13,16 +13,23 @@ import javax.swing.AbstractButton;
 import javax.swing.BorderFactory;
 import javax.swing.Icon;
 import javax.swing.ImageIcon;
+import javax.swing.JMenuItem;
+import javax.swing.JPanel;
+import javax.swing.JPopupMenu;
 import javax.swing.JSeparator;
 import javax.swing.JToolBar;
+import javax.swing.SwingUtilities;
 
 import org.openstreetmap.josm.data.preferences.NamedColorProperty;
 import org.openstreetmap.josm.gui.MainApplication;
+import org.openstreetmap.josm.gui.preferences.PreferenceDialog;
 import org.openstreetmap.josm.gui.preferences.PreferenceSetting;
 import org.openstreetmap.josm.plugins.Plugin;
 import org.openstreetmap.josm.plugins.PluginInformation;
 import org.openstreetmap.josm.spi.preferences.Config;
 import org.openstreetmap.josm.spi.preferences.PreferenceChangedListener;
+import org.openstreetmap.josm.tools.ImageProvider;
+import org.openstreetmap.josm.tools.ImageProvider.ImageSizes;
 
 public class MultiLineToolbarPlugin extends Plugin {
   private static final int BORDER_COMPACT = 3;
@@ -36,13 +43,22 @@ public class MultiLineToolbarPlugin extends Plugin {
   private static MultiLineToolbarPlugin instance;
   private LayoutManager original;
   private MultilineToolbarLayout layout;
+  private JMenuItem configure;
   
   public MultiLineToolbarPlugin(PluginInformation info) {
     super(info);
     instance = this;
+    configure = new JMenuItem(org.openstreetmap.josm.tools.I18n.tr("Configure MultiLineToolbar"));
+    configure.setIcon(ImageProvider.get("preferences/main_toolbar", ImageSizes.MENU));
+    configure.addActionListener(e -> {
+      final PreferenceDialog p = new PreferenceDialog(MainApplication.getMainFrame());
+      SwingUtilities.invokeLater(() -> p.selectPreferencesTabByClass(MultiLineToolbarPref.class));
+      p.setVisible(true);
+    });
     
     if(MainApplication.getToolbar() != null) {
       original = MainApplication.getToolbar().control.getLayout();
+      addPopupEntry();
     }
     
     if(Config.getPref().getBoolean(MultiLineToolbarPref.KEY_ENABLED, true) && MainApplication.getToolbar() != null) {
@@ -111,6 +127,15 @@ public class MultiLineToolbarPlugin extends Plugin {
     Config.getPref().addKeyPreferenceChangeListener(MultiLineToolbarPref.KEY_MENU_INDICATOR_ENABLED, l);
   }
   
+  private void addPopupEntry() {
+    JPopupMenu popup = MainApplication.getToolbar().control.getComponentPopupMenu();
+    
+    if(popup != null) {
+      popup.addSeparator();
+      popup.add(configure);
+    }
+  }
+  
   public static MultiLineToolbarPlugin getInstance() {
     return instance;
   }
@@ -145,7 +170,10 @@ public class MultiLineToolbarPlugin extends Plugin {
     }
 
     @Override
-    public void layoutContainer(Container parent) {
+    public synchronized void layoutContainer(Container parent) {
+      int oldWidth = width;
+      int oldHeight = height;
+      
       int xPos = parent.getInsets().top;
       int yPos = parent.getInsets().left;
       
@@ -214,11 +242,23 @@ public class MultiLineToolbarPlugin extends Plugin {
       else {
         lineHeight = 30;
       }
-
+      
       width = xPos;
       height = yPos + lineHeight + parent.getInsets().bottom;
 
       parent.setPreferredSize(new Dimension(width, height));
+      
+      //force update of parent container of toolbar and main panel
+      if(oldWidth != width || oldHeight != height) {
+        parent.getParent().doLayout();
+        
+        JPanel p = MainApplication.getMainPanel();
+        p.doLayout();
+        
+        for(int i = 0; i < p.getComponentCount(); i++) {          
+          p.getComponent(i).doLayout();
+        }
+      }
     }
   }
   
