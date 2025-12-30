@@ -22,6 +22,7 @@ import javax.swing.SwingUtilities;
 
 import org.openstreetmap.josm.data.preferences.NamedColorProperty;
 import org.openstreetmap.josm.gui.MainApplication;
+import org.openstreetmap.josm.gui.MapFrame;
 import org.openstreetmap.josm.gui.preferences.PreferenceDialog;
 import org.openstreetmap.josm.gui.preferences.PreferenceSetting;
 import org.openstreetmap.josm.plugins.Plugin;
@@ -121,6 +122,11 @@ public class MultiLineToolbarPlugin extends Plugin {
         MainApplication.getToolbar().control.doLayout();
       }
     });
+    Config.getPref().addKeyPreferenceChangeListener("toolbar", e -> {
+      if(layout != null && MainApplication.getToolbar() != null) {
+        MainApplication.getToolbar().control.getParent().revalidate();
+      }
+    });
     Config.getPref().addKeyPreferenceChangeListener(MultiLineToolbarPref.KEY_COLOR_BORDER, l);
     Config.getPref().addKeyPreferenceChangeListener(MultiLineToolbarPref.KEY_COLOR_FILLING, l);
     Config.getPref().addKeyPreferenceChangeListener(MultiLineToolbarPref.KEY_MENU_INDICATOR_SIZE, l);
@@ -178,8 +184,9 @@ public class MultiLineToolbarPlugin extends Plugin {
       int yPos = parent.getInsets().left;
       
       int lineWidth = parent.getWidth();
-      int lineHeight = 0;
-      int buttonWidth = 0;
+      
+      int buttonWidth = ImageProvider.ImageSizes.LARGEICON.getAdjustedWidth() + BORDER_HORIZONTAL*2;
+      int lineHeight = ImageProvider.ImageSizes.LARGEICON.getAdjustedHeight() + 6;
       
       for(int i = parent.getComponentCount()-1; i >= 0; i--) {
         if(parent.getComponent(i) instanceof AbstractButton) {
@@ -189,14 +196,12 @@ public class MultiLineToolbarPlugin extends Plugin {
           parent.remove(i);
           continue;
         }
-        lineHeight = Math.max(lineHeight, parent.getComponent(i).getPreferredSize().height);
-        buttonWidth = Math.max(buttonWidth, parent.getComponent(i).getPreferredSize().width);
       }
-      
+            
       if(lineHeight != 0) {
         for(int i = 0; i < parent.getComponentCount(); i++) {
           int height = lineHeight;
-          int width = buttonWidth;
+          int width = Math.max(buttonWidth, parent.getComponent(i).getPreferredSize().width);
 
           if(parent.getComponent(i) instanceof JToolBar.Separator) {
             width = parent.getComponent(i).getMinimumSize().width;
@@ -215,13 +220,17 @@ public class MultiLineToolbarPlugin extends Plugin {
           parent.getComponent(i).setSize(width, height);
           xPos += width;
   
-          int add = 0;
-  
+          int add = xPos + parent.getInsets().right;
+          
           if(i < parent.getComponentCount()-1) {
-              add = parent.getComponent(i+1).getPreferredSize().width;
+            add += parent.getComponent(i+1) instanceof JSeparator ? parent.getComponent(i+1).getMinimumSize().width : Math.max(buttonWidth, parent.getComponent(i+1).getPreferredSize().width);
+            
+            if(lineWidth != 0 && add > lineWidth && parent.getComponent(i+1).getPreferredSize().width / 2 > buttonWidth) {
+              add = lineWidth;
+            }
           }
-  
-          if(lineWidth != 0 && xPos + add + parent.getInsets().right > lineWidth) {
+          
+          if(lineWidth != 0 && add > lineWidth && i < parent.getComponentCount()-1) {
             xPos = parent.getInsets().left;
             yPos += lineHeight + parent.getInsets().bottom;
             
@@ -243,10 +252,10 @@ public class MultiLineToolbarPlugin extends Plugin {
         lineHeight = 30;
       }
       
-      width = xPos;
+      width = lineWidth;
       height = yPos + lineHeight + parent.getInsets().bottom;
-
-      parent.setPreferredSize(new Dimension(width, height));
+      
+      parent.setSize(new Dimension(width, height));
       
       //force update of parent container of toolbar and main panel
       if(oldWidth != width || oldHeight != height) {
@@ -255,9 +264,15 @@ public class MultiLineToolbarPlugin extends Plugin {
         JPanel p = MainApplication.getMainPanel();
         p.doLayout();
         
-        for(int i = 0; i < p.getComponentCount(); i++) {          
+        for(int i = 0; i < p.getComponentCount(); i++) {
           p.getComponent(i).doLayout();
+          
+          if(p.getComponent(i) instanceof MapFrame) {
+            ((MapFrame)p.getComponent(i)).getComponent(0).doLayout();
+          }
         }
+        
+        parent.getParent().revalidate();
       }
     }
   }
@@ -299,8 +314,8 @@ public class MultiLineToolbarPlugin extends Plugin {
         
         Color color = g.getColor();
         
-        int xPos = x+getIconWidth()-indicatorSize+3;
-        int yPos = getIconHeight()-indicatorSize+3;
+        int xPos = x+getIconWidth()-indicatorSize;
+        int yPos = getIconHeight()-indicatorSize-1;
         
         if(c.isEnabled()) {
           g.setColor(COLOR_FILLING.get());
