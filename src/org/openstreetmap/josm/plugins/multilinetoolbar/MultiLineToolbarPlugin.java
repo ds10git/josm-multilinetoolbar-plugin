@@ -7,7 +7,7 @@ import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.LayoutManager;
 import java.awt.Point;
-import java.util.Objects;
+import java.util.Set;
 
 import javax.swing.AbstractButton;
 import javax.swing.BorderFactory;
@@ -40,6 +40,9 @@ public class MultiLineToolbarPlugin extends Plugin {
   
   private static final NamedColorProperty COLOR_BORDER = new NamedColorProperty(MultiLineToolbarPref.KEY_COLOR_BORDER, new Color(0, 255, 255));
   private static final NamedColorProperty COLOR_FILLING = new NamedColorProperty(MultiLineToolbarPref.KEY_COLOR_FILLING, new Color(0, 0, 255));
+  
+  private static final Set<String> MENU_COMPONENTS_ACCEPTABLE = Set.of("org.openstreetmap.josm.gui.tagging.presets.TaggingPresetMenu",
+      "org.openstreetmap.josm.plugins.toolbarcategories.ToolbarCategoriesPlugin.ToolbarCategoryAction");
 
   private static MultiLineToolbarPlugin instance;
   private LayoutManager original;
@@ -202,12 +205,12 @@ public class MultiLineToolbarPlugin extends Plugin {
         for(int i = 0; i < parent.getComponentCount(); i++) {
           int height = lineHeight;
           int width = Math.max(buttonWidth, parent.getComponent(i).getPreferredSize().width);
-
+            
           if(parent.getComponent(i) instanceof JToolBar.Separator) {
             width = parent.getComponent(i).getMinimumSize().width;
             height = lineHeight;
           }
-          else if(parent.getComponent(i) instanceof AbstractButton && Objects.equals("org.openstreetmap.josm.gui.tagging.presets.TaggingPresetMenu", ((AbstractButton)parent.getComponent(i)).getAction().getClass().getCanonicalName()) && !(((AbstractButton)parent.getComponent(i)).getIcon() instanceof CompoundIcon)) {
+          else if(parent.getComponent(i) instanceof AbstractButton && isMenuComponentAcceptable((AbstractButton)parent.getComponent(i)) && !(((AbstractButton)parent.getComponent(i)).getIcon() instanceof CompoundIcon)) {
             CompoundIcon icon = new CompoundIcon(((AbstractButton)parent.getComponent(i)).getIcon(), ((AbstractButton)parent.getComponent(i)).getDisabledIcon(), lineHeight);
             
             if(icon.icon != null) {
@@ -275,6 +278,12 @@ public class MultiLineToolbarPlugin extends Plugin {
         parent.getParent().revalidate();
       }
     }
+  }
+  
+  private static boolean isMenuComponentAcceptable(AbstractButton b) {
+    String name = b.getAction().getClass().getCanonicalName();
+    
+    return name != null && MENU_COMPONENTS_ACCEPTABLE.contains(name);
   }
   
   private static final class CompoundIcon extends ImageIcon {
